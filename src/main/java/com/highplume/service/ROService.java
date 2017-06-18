@@ -49,9 +49,8 @@ public class ROService {
   @Context
   private UriInfo uriInfo;
 
-  String prefix = "RO-";    //logFile = "RO-highplumeROService.log";
-    String logFile = "highplumeService.log";
-    String logTrigger = "highplumelog.trigger";
+  String prefix = "RO-";    //logFile = "RO-highplumeService.log";
+
   // ======================================
   // =           Public Methods           =
   // ======================================
@@ -59,19 +58,19 @@ public class ROService {
     /*-----------------------------*/
 
 	public void log (String output){
-		utilLog(prefix, output);
+		Util.log(prefix, output);
 	}
 
     /*-----------------------------*/
 
 	public void log (String output, int logLevel){
-		utilLog(prefix, output, logLevel);
+		Util.log(prefix, output, logLevel);
 	}
 
     /*-----------------------------*/
 
 
-    public void utilLog (String prefix, String output){
+/*    public void utilLog (String prefix, String output){
 		utilLog(prefix, output, 0);
 	}
 
@@ -101,7 +100,7 @@ public class ROService {
                 e.printStackTrace();
             }
         }
-    }
+    }*/
 
 
 
@@ -195,84 +194,7 @@ LANGUAGE plpgsql;
 select get_avg('1');
 ------run stored procedure------------
 
-getAllUsersByCorp
-_usersByDept
-getAllUsersByDept
-getdDeptUserData
-getAvgGiving
-getGivers
-getReceivers
-msds
-_receiverTotalsPerDept
-_giverTotalsPerDept
-IdUserNameValue
-_getUserDecile
-_getPercentRank
-_giverValuesRanking
-_ReceiverValuesRanking
-getCorpvalues
-getInfluence
-_deptGiverTotals
-_deptRecTotals
-getDeptTotals
-getStars
-test
-addQualities()
-addQualities
-initDB
-getQualities
-getQualitiesComposite
-qualityProfile
-quality
-giveStar
-addMember
-changePwd
-inactiveUser
-changeUserDept
-userInfo
-loginMember
-_deptByCorp
-getDeptByCorp
-GetCorpID
-validateEmailP
-validateEmail
-sendMailTLS
 
-
-
-
-members
-users
-usersbycorp/{corpID}
-usersbydept/{corpID}/{departmentID}
-deptuserdata/{corpID}
-giver/{corpID}/{receiverID}
-receivers/{corpID}/{giverID}
-    _msds (double[] x, int n)
-     _receiverTotalsPerDept(String corpID, String UserID)
-     _giverTotalsPerDept(String corpID, String UserID)
-     IdUserNameValue _getUserDecile(java.util.ArrayList<IdUserNameValue> userArray, String userID)
-
-influence/{corpID}/{gr}/{wl}/{userID: .*}
-influence/{corpID}/{wl}/{userID: .*}
-    _deptGiverTotals(String corpID)
-    _deptRecTotals(String corpID)
-depttotals/{corpID}
-getstars/{corpID}/{givingOrReceiving}
-test
-initdb
-givestar/{givingMemberID}/{receivingMemberID}
-addmember
-changepwd
-userinfo
-login -POST
-    _deptByCorp(String corpID)
-getdeptbycorp
-getcorpid
-validateemailp
-validateemail
-sendmailtls
-*/
 
     /*------------------------*/
 
@@ -328,27 +250,36 @@ sendmailtls
     if (!validUserAndLevel(corpID, userToken, null, "401"))
 		return "{\"users\": []}";
 
-	List<Member> members = _usersByDept(corpID, departmentID);
+    try{
+        List<Member> members = _usersByDept(corpID, departmentID);
 
-    String retStr="{\"users\": [";
+        String retStr="{\"users\": [";
 
-    for (int i=0; i < members.size(); i++) {
-      retStr += "{\"ID\": \"" + members.get(i).getId()+
-                "\", \"nameFirst\": \"" + members.get(i).getnameFirst() +
-                "\", \"nameMiddle\": \"" + members.get(i).getnameMiddle() +
-                "\", \"nameLast\": \"" + members.get(i).getnameLast() +
-//                "\", \"userID\": \"" + members.get(i).getUserID() +
-                "\", \"active\": \"" + members.get(i).getActive().toString() +
-//                "\", \"PWD\": \"" + members.get(i).getPWD() +
-//                "\", \"hash\": \"" + members.get(i).getHash() +
-//                "\", \"email\": \"" + members.get(i).getEmail() +
-//                "\", \"department\": \"" + members.get(i).getDepartmentID() +
-                "\"},";
+        for (int i=0; i < members.size(); i++) {
+          retStr += "{\"ID\": \"" + members.get(i).getId()+
+                    "\", \"nameFirst\": \"" + members.get(i).getnameFirst() +
+                    "\", \"nameMiddle\": \"" + members.get(i).getnameMiddle() +
+                    "\", \"nameLast\": \"" + members.get(i).getnameLast() +
+    //                "\", \"userID\": \"" + members.get(i).getUserID() +
+                    "\", \"active\": \"" + members.get(i).getActive().toString() +
+    //                "\", \"PWD\": \"" + members.get(i).getPWD() +
+    //                "\", \"hash\": \"" + members.get(i).getHash() +
+    //                "\", \"email\": \"" + members.get(i).getEmail() +
+    //                "\", \"department\": \"" + members.get(i).getDepartmentID() +
+                    "\"},";
+        }
+        if (members.size() != 0) retStr = retStr.substring(0, retStr.length()-1); //remove the last extra comma
+        retStr += "]}";
+
+        return retStr;
+
+    } catch  (PersistenceException pe){
+        log("usersbydept: " + pe.getMessage());
+		return "Error:" + pe.getMessage();
+    } catch (Exception e){
+        log("usersbydept: " + e.getMessage());
+        return "Error: " + e.getMessage();
     }
-    if (members.size() != 0) retStr = retStr.substring(0, retStr.length()-1); //remove the last extra comma
-    retStr += "]}";
-
-    return retStr;
   }
 
     /*------------------------*/
@@ -361,47 +292,55 @@ sendmailtls
 
         if (!validUserAndLevel(corpID, userToken, null, "201"))
 		    return "{\"data\": {\"giver\": []}}";
+        try{
+            List<DeptCorp> departments = _deptByCorp(corpID);
+    //        List<Member>[] membersPerDept = (List<Member>[])new Object[departments.size()];
+            List<List<Member>> membersPerDept = new java.util.ArrayList<>();	//List of list of user records per department
 
-  		List<DeptCorp> departments = _deptByCorp(corpID);
-//        List<Member>[] membersPerDept = (List<Member>[])new Object[departments.size()];
-        List<List<Member>> membersPerDept = new java.util.ArrayList<>();	//List of list of user records per department
-
-		for (int i = 0; i < departments.size(); i++)	//Load the List with a list of users per department
-		{
-            List<Member> tempMem = _usersByDept(corpID, departments.get(i).getId());
-			if (tempMem.size() != 0) membersPerDept.add(tempMem);
-		}
-
-        List<Object[]> totalsByDept = _deptGiverTotals(corpID);	//Total TUs given by each department
-
-        for (int i = 0; i < totalsByDept.size(); i++) {
-            int j = 0; double deptAvgPerGiver=0.0;
-
-            while ((j < membersPerDept.size()) && (!totalsByDept.get(i)[2].equals(membersPerDept.get(j).get(0).getDepartmentID())) ){ //giverTotal[0]=deptname,[1]=total,[2]=deptID
-                j++;
-            }
-            deptAvgPerGiver = Double.parseDouble(totalsByDept.get(i)[1].toString())/(membersPerDept.get(j).size());
-
-            retStr += "{\"Dept\": \"" + totalsByDept.get(i)[0] + "\", \"Average\": \"" + Math.round(deptAvgPerGiver) + "\"},";
-        }
-        if (totalsByDept.size() != 0) retStr = retStr.substring(0, retStr.length()-1); //remove the last extra comma
-        retStr += "], \"receiver\": [";
-
-        totalsByDept = _deptRecTotals(corpID);		//Total TUs received by each department
-
-        for (int i=0; i < totalsByDept.size(); i++) {
-            int j=0;
-            while ((j < membersPerDept.size()) && (!totalsByDept.get(i)[2].equals(membersPerDept.get(j).get(0).getDepartmentID())) ){ //giverTotal[0]=deptname,[1]=total,[2]=deptID
-                j++;
+            for (int i = 0; i < departments.size(); i++)	//Load the List with a list of users per department
+            {
+                List<Member> tempMem = _usersByDept(corpID, departments.get(i).getId());
+                if (tempMem.size() != 0) membersPerDept.add(tempMem);
             }
 
-            double deptAvgPerGiver = Double.parseDouble(totalsByDept.get(i)[1].toString())/(membersPerDept.get(j).size());
-            retStr += "{\"Dept\": \"" + totalsByDept.get(i)[0] + "\", \"Average\": \"" + Math.round(deptAvgPerGiver) + "\"},";
-        }
-        if (totalsByDept.size() != 0) retStr = retStr.substring(0, retStr.length()-1); //remove the last extra comma
-        retStr += "]}}";
+            List<Object[]> totalsByDept = _deptGiverTotals(corpID);	//Total TUs given by each department
 
-        return retStr;
+            for (int i = 0; i < totalsByDept.size(); i++) {
+                int j = 0; double deptAvgPerGiver=0.0;
+
+                while ((j < membersPerDept.size()) && (!totalsByDept.get(i)[2].equals(membersPerDept.get(j).get(0).getDepartmentID())) ){ //giverTotal[0]=deptname,[1]=total,[2]=deptID
+                    j++;
+                }
+                deptAvgPerGiver = Double.parseDouble(totalsByDept.get(i)[1].toString())/(membersPerDept.get(j).size());
+
+                retStr += "{\"Dept\": \"" + totalsByDept.get(i)[0] + "\", \"Average\": \"" + Math.round(deptAvgPerGiver) + "\"},";
+            }
+            if (totalsByDept.size() != 0) retStr = retStr.substring(0, retStr.length()-1); //remove the last extra comma
+            retStr += "], \"receiver\": [";
+
+            totalsByDept = _deptRecTotals(corpID);		//Total TUs received by each department
+
+            for (int i=0; i < totalsByDept.size(); i++) {
+                int j=0;
+                while ((j < membersPerDept.size()) && (!totalsByDept.get(i)[2].equals(membersPerDept.get(j).get(0).getDepartmentID())) ){ //giverTotal[0]=deptname,[1]=total,[2]=deptID
+                    j++;
+                }
+
+                double deptAvgPerGiver = Double.parseDouble(totalsByDept.get(i)[1].toString())/(membersPerDept.get(j).size());
+                retStr += "{\"Dept\": \"" + totalsByDept.get(i)[0] + "\", \"Average\": \"" + Math.round(deptAvgPerGiver) + "\"},";
+            }
+            if (totalsByDept.size() != 0) retStr = retStr.substring(0, retStr.length()-1); //remove the last extra comma
+            retStr += "]}}";
+
+            return retStr;
+        } catch  (PersistenceException pe){
+            log("deptuserdata: " + pe.getMessage());
+            return "Error:" + pe.getMessage();
+        } catch (Exception e){
+            log("deptuserdata: " + e.getMessage());
+            return "Error: " + e.getMessage();
+        }
+
 	}
 
     /*------------------------*/
@@ -438,34 +377,42 @@ sendmailtls
 
         if (!validUserAndLevel(corpID, userToken, null,"301"))            //Make sure the user is at least a dept admin
             return "{\"data\": []}";
+        try{
+            String deptRestrictionClause = "";
+            if (getUserRoleID(userToken).equals("301"))
+                deptRestrictionClause = "AND RECEIVINGMEMBER.DEPARTMENTID = '" + getUserDeptID(userToken) + "' ";
 
-        String deptRestrictionClause = "";
-        if (getUserRoleID(userToken).equals("301"))
-            deptRestrictionClause = "AND RECEIVINGMEMBER.DEPARTMENTID = '" + getUserDeptID(userToken) + "' ";
+            queryStr = "SELECT MEMBER.ID, MEMBER.NAMEFIRST, MEMBER.NAMEMIDDLE, MEMBER.NAMELAST, COUNT(GIVINGMEMBERID) AS NUMOFSTARSGIVEN " +
+                    "FROM STARGIVEN " +
+                    "INNER JOIN MEMBER ON GIVINGMEMBERID = MEMBER.ID " +
+                    "INNER JOIN MEMBER AS RECEIVINGMEMBER ON STARGIVEN.RECEIVINGMEMBERID = RECEIVINGMEMBER.ID " +
+                    "INNER JOIN TU ON STARGIVEN.TUTYPEID = TU.TUTYPEID " +
+                    "INNER JOIN TUCOMPOSITE ON TUCOMPOSITE.ID = TU.TUCOMPOSITEID " +
+                    "WHERE STARGIVEN.receivingmemberid = '" + receiverID + "' "  +
+                    "AND MEMBER.CORPID = '" + corpID + "' "  +
+                    deptRestrictionClause +
+                    "AND TUCOMPOSITE.CORPID = '" + corpID + "' "  +
+                    "AND TUCOMPOSITE.ACTIVE = true " +
+                    "GROUP BY MEMBER.ID, MEMBER.NAMEFIRST, MEMBER.NAMELAST, MEMBER.NAMEMIDDLE " +
+                    "ORDER BY NUMOFSTARSGIVEN DESC";
 
-        queryStr = "SELECT MEMBER.ID, MEMBER.NAMEFIRST, MEMBER.NAMEMIDDLE, MEMBER.NAMELAST, COUNT(GIVINGMEMBERID) AS NUMOFSTARSGIVEN " +
-                "FROM STARGIVEN " +
-                "INNER JOIN MEMBER ON GIVINGMEMBERID = MEMBER.ID " +
-                "INNER JOIN MEMBER AS RECEIVINGMEMBER ON STARGIVEN.RECEIVINGMEMBERID = RECEIVINGMEMBER.ID " +
-                "INNER JOIN TU ON STARGIVEN.TUTYPEID = TU.TUTYPEID " +
-                "INNER JOIN TUCOMPOSITE ON TUCOMPOSITE.ID = TU.TUCOMPOSITEID " +
-                "WHERE STARGIVEN.receivingmemberid = '" + receiverID + "' "  +
-                "AND MEMBER.CORPID = '" + corpID + "' "  +
-                deptRestrictionClause +
-                "AND TUCOMPOSITE.CORPID = '" + corpID + "' "  +
-                "AND TUCOMPOSITE.ACTIVE = true " +
-                "GROUP BY MEMBER.ID, MEMBER.NAMEFIRST, MEMBER.NAMELAST, MEMBER.NAMEMIDDLE " +
-                "ORDER BY NUMOFSTARSGIVEN DESC";
+            List<Object[]> results = em.createNativeQuery(queryStr).getResultList();
 
-        List<Object[]> results = em.createNativeQuery(queryStr).getResultList();
+            for (int i=0; i < results.size(); i++) {
+                retStr += "{\"ID\": \"" + results.get(i)[0] + "\",\"Given To\": \"" + results.get(i)[1]+" "+ results.get(i)[3] + "\",\"Number of Stars\": " + (results.get(i)[4]).toString() + "},";
+            }
+            if (results.size() != 0) retStr = retStr.substring(0, retStr.length()-1); //remove the last extra comma
+            retStr += "]}";
 
-        for (int i=0; i < results.size(); i++) {
-            retStr += "{\"ID\": \"" + results.get(i)[0] + "\",\"Given To\": \"" + results.get(i)[1]+" "+ results.get(i)[3] + "\",\"Number of Stars\": " + (results.get(i)[4]).toString() + "},";
+            return retStr;
+
+        } catch (PersistenceException pe){
+            log("giver: " + pe.getMessage());
+            return "Error:" + pe.getMessage();
+        } catch (Exception e){
+            log("giver: " + e.getMessage());
+            return "Error: " + e.getMessage();
         }
-        if (results.size() != 0) retStr = retStr.substring(0, retStr.length()-1); //remove the last extra comma
-        retStr += "]}";
-
-        return retStr;
     }
 
     /*------------------------*/
@@ -479,64 +426,44 @@ sendmailtls
         if (!validUserAndLevel(corpID, userToken, null,"301"))            //Make sure the user is at least a dept admin
             return "{\"data\": []}";
 
-        String deptRestrictionClause = "";
-        if (getUserRoleID(userToken).equals("301"))
-            deptRestrictionClause = "AND GIVINGMEMBER.DEPARTMENTID = '" + getUserDeptID(userToken) + "' ";
+        try{
+            String deptRestrictionClause = "";
+            if (getUserRoleID(userToken).equals("301"))
+                deptRestrictionClause = "AND GIVINGMEMBER.DEPARTMENTID = '" + getUserDeptID(userToken) + "' ";
 
-        queryStr = "SELECT MEMBER.ID, MEMBER.NAMEFIRST, MEMBER.NAMEMIDDLE, MEMBER.NAMELAST, COUNT(RECEIVINGMEMBERID) AS NUMOFSTARSRECEIVED " +
-                "FROM STARGIVEN " +
-                "INNER JOIN MEMBER ON RECEIVINGMEMBERID = MEMBER.ID " +
-                "INNER JOIN MEMBER AS GIVINGMEMBER ON STARGIVEN.GIVINGMEMBERID = GIVINGMEMBER.ID " +
-                "INNER JOIN TU ON STARGIVEN.TUTYPEID = TU.TUTYPEID " +
-                "INNER JOIN TUCOMPOSITE ON TUCOMPOSITE.ID = TU.TUCOMPOSITEID " +
-                "WHERE STARGIVEN.givingmemberid = '" + giverID + "' "  +
-                "AND MEMBER.CORPID = '" + corpID + "' "  +
-                deptRestrictionClause +
-                "AND TUCOMPOSITE.CORPID = '" + corpID + "' "  +
-                "AND TUCOMPOSITE.ACTIVE = true " +
-                "GROUP BY MEMBER.ID, MEMBER.NAMEFIRST, MEMBER.NAMELAST, MEMBER.NAMEMIDDLE " +
-                "ORDER BY NUMOFSTARSRECEIVED DESC";
+            queryStr = "SELECT MEMBER.ID, MEMBER.NAMEFIRST, MEMBER.NAMEMIDDLE, MEMBER.NAMELAST, COUNT(RECEIVINGMEMBERID) AS NUMOFSTARSRECEIVED " +
+                    "FROM STARGIVEN " +
+                    "INNER JOIN MEMBER ON RECEIVINGMEMBERID = MEMBER.ID " +
+                    "INNER JOIN MEMBER AS GIVINGMEMBER ON STARGIVEN.GIVINGMEMBERID = GIVINGMEMBER.ID " +
+                    "INNER JOIN TU ON STARGIVEN.TUTYPEID = TU.TUTYPEID " +
+                    "INNER JOIN TUCOMPOSITE ON TUCOMPOSITE.ID = TU.TUCOMPOSITEID " +
+                    "WHERE STARGIVEN.givingmemberid = '" + giverID + "' "  +
+                    "AND MEMBER.CORPID = '" + corpID + "' "  +
+                    deptRestrictionClause +
+                    "AND TUCOMPOSITE.CORPID = '" + corpID + "' "  +
+                    "AND TUCOMPOSITE.ACTIVE = true " +
+                    "GROUP BY MEMBER.ID, MEMBER.NAMEFIRST, MEMBER.NAMELAST, MEMBER.NAMEMIDDLE " +
+                    "ORDER BY NUMOFSTARSRECEIVED DESC";
 
-        List<Object[]> results = em.createNativeQuery(queryStr).getResultList();
+            List<Object[]> results = em.createNativeQuery(queryStr).getResultList();
 
 
-        for (int i=0; i < results.size(); i++) {
-            retStr += "{\"ID\": \"" + results.get(i)[0] + "\",\"Receiver\": \"" + (String) results.get(i)[1]+" "+ results.get(i)[3] + "\",\"Number of Stars\": " + (results.get(i)[4]).toString() + "},";
+            for (int i=0; i < results.size(); i++) {
+                retStr += "{\"ID\": \"" + results.get(i)[0] + "\",\"Receiver\": \"" + (String) results.get(i)[1]+" "+ results.get(i)[3] + "\",\"Number of Stars\": " + (results.get(i)[4]).toString() + "},";
+            }
+            if (results.size() != 0) retStr = retStr.substring(0, retStr.length()-1); //remove the last extra comma
+            retStr += "]}";
+
+            return retStr;
+
+        } catch  (PersistenceException pe){
+            log("receiver: " + pe.getMessage());
+            return "Error:" + pe.getMessage();
+        } catch (Exception e){
+            log("receiver: " + e.getMessage());
+            return "Error: " + e.getMessage();
         }
-        if (results.size() != 0) retStr = retStr.substring(0, retStr.length()-1); //remove the last extra comma
-        retStr += "]}";
-
-        return retStr;
     }
-
-
-    /*------------------------*/
-
-/*    @GET
-    @Path("reach/{corpID}/{memberID}")
-    @Produces("application/json")
-    public String getReach(@PathParam("corpID") String corpID, @PathParam("memberID") String memberID) {
-        String queryStr, retStr="{\"data\": [";
-
-        queryStr = "SELECT GIVINGMEMBERDEPT.DEPTNAME, COUNT(GIVINGMEMBERDEPT.DEPTNAME) AS DEPTTOTALS " +
-                   "FROM STARGIVEN " +
-                   "INNER JOIN MEMBER GIVINGMEMBER ON STARGIVEN.GIVINGMEMBERID = GIVINGMEMBER.ID " +
-                   "INNER JOIN DEPTCORP GIVINGMEMBERDEPT ON GIVINGMEMBER.DEPARTMENTID = GIVINGMEMBERDEPT.ID " +
-                   "WHERE STARGIVEN.RECEIVINGMEMBERID = '" + memberID + "' "  +
-                   "AND GIVINGMEMBER.CORPID = '" + corpID + "' "  +
-                   "GROUP BY GIVINGMEMBERDEPT.DEPTNAME " +
-                   "ORDER BY DEPTTOTALS DESC";
-
-        List<Object[]> results = em.createNativeQuery(queryStr).getResultList();
-
-        for (int i=0; i < results.size(); i++) {
-            retStr += "{\"Dept\": \"" + results.get(i)[0] + "\",\"Total\": \"" + (String) (results.get(i)[1]).toString()+ "\"},";
-        }
-        if (results.size() != 0) retStr = retStr.substring(0, retStr.length()-1); //remove the last extra comma
-        retStr += "]}";
-
-        return retStr;
-    }*/
 
     /*------------------------*/
 
@@ -651,15 +578,6 @@ sendmailtls
 
     public double _giverValuesRanking(String corpID, String userID, String valueID) {
 
-/*        String queryStr =
-                "SELECT QUALITY.ID, QUALITY.NAME, COUNT(STARGIVEN.TUTYPEID) " +
-                "FROM STARGIVEN " +
-                "INNER JOIN MEMBER RECEIVINGMEMBER ON STARGIVEN.RECEIVINGMEMBERID = RECEIVINGMEMBER.ID " +
-                "INNER JOIN TUTYPE QUALITY ON QUALITY.ID = STARGIVEN.TUTYPEID " +
-                "WHERE STARGIVEN.GIVINGMEMBERID = '" + userID + "' " +
-                "AND RECEIVINGMEMBER.CORPID = '" + corpID + "' " +
-                "GROUP BY QUALITY.ID, QUALITY.NAME, STARGIVEN.TUTYPEID";*/
-				
 		String byValueClause = "";
 		if (!valueID.equals("-1")){
 			byValueClause = "AND TUTYPE.ID = '" + valueID + "' ";
@@ -755,24 +673,17 @@ sendmailtls
         for (TU tu: profileTUs){
             total += tu.getRatio();
         }
+
+	    log("getGeneralsAvg: " + Double.toString(total/(profileTUs.size()-1)));
         return total/(profileTUs.size()-1);         //Don't add "General" to the total
 
 /*        profileTUs.forEach((tu) -> {
             avg += ;
         });*/
     }
-/*    *//*------------------------*//*
 
-    @GET
-    @Path("corpvaluesdept/{corpID}/{userToken}/{gr}/{deptID}") //corpID -- Giver or Receiver -- user, if present, for whom to send back % ranking only
-    @Produces("application/json")
-    public String getCorpValuesDept(@PathParam("corpID") String corpID, @PathParam("corpID") String userToken, @PathParam("gr") String gr, @PathParam("deptID") String deptID) {
-        return _getCorpValues (corpID, gr, null, false, deptID);
-    }*/
-	
-	
-	
     /*------------------------*/
+
 	public String _getCorpValuesForIndividual(String corpID, String gr, String userID){
 		try{
 			TUComposite activeTuComposite = em.createNamedQuery(TUComposite.FIND_ACTIVE_BY_CORPID, TUComposite.class).setParameter("corpID", corpID).getSingleResult();
@@ -801,8 +712,10 @@ sendmailtls
 			return retStr;
 		
 		} catch (NoResultException pe) {
+		    log("_getCorpValuesForIndividual: " + pe.getMessage());
 			return "{\"ranking\": []}";
 		} catch (PersistenceException pe) {
+		    log("_getCorpValuesForIndividual: " + pe.getMessage());
 			return "FAIL: " + pe.getMessage();
 		}
 		
@@ -849,105 +762,94 @@ sendmailtls
 
     public String _getCorpValues(String corpID, String gr, String valueID, String userID, boolean forIndividualUser, String deptID){
 		
-        //Get the list of all the employees in the corporation
-/*        List<Member> members = em.createNamedQuery(Member.FIND_ALL_BY_CORPID, Member.class)
-												.setParameter("corpID", corpID)
-												.getResultList();*/
-/*        List<Member> members;
-        if (deptID == null)     //Individual against the company or corp admin
-            members = em.createNamedQuery(Member.FIND_ALL_BY_CORPID, Member.class)
-												.setParameter("corpID", corpID)
-												.getResultList();
-        else
-            members = em.createNamedQuery(Member.FIND_ALL_BY_CORPID_DEPTID, Member.class)                           //restricted to department.  dept admin
-												.setParameter("corpID", corpID).setParameter("deptID", deptID)
-												.getResultList();*/
+        try{
+            List<Member> members = em.createNamedQuery(Member.FIND_ALL_BY_CORPID, Member.class)
+                                                    .setParameter("corpID", corpID)
+                                                    .getResultList();
 
-        List<Member> members = em.createNamedQuery(Member.FIND_ALL_BY_CORPID, Member.class)
-												.setParameter("corpID", corpID)
-												.getResultList();
-
-        java.util.ArrayList<String> deptUserIds = new java.util.ArrayList<>();
-        if (deptID != null){
-            List<Member> deptMembers = em.createNamedQuery(Member.FIND_ALL_BY_CORPID_DEPTID, Member.class)                           //restricted to department.  dept admin
-												.setParameter("corpID", corpID).setParameter("deptID", deptID)
-												.getResultList();
-            for (Member member: deptMembers){
-                deptUserIds.add(member.getId());
-            }
-        }
-
-        String retStr="{\"ranking\": [";
-        double rank = 0;
-
-/*        //Get corporate Values Profile
-    	TUComposite activeProfile = em.createNamedQuery(TUComposite.FIND_ACTIVE_BY_CORPID, TUComposite.class).setParameter("corpID", corpID).getSingleResult();
-        List<TU> profileDef = em.createNamedQuery(TU.FIND_ALL_BY_TUCOMPOSITEID, TU.class).setParameter("tucompositeid", activeProfile.getId()).getResultList();
-
-        HashMap<String, Float> values = new HashMap<String, Float>();
-        for (int i=0; i<profileDef.size(); i++){
-            values.put(profileDef.get(i).getTutypeId(),profileDef.get(i).getRatio());
-        }*/
-
-        java.util.ArrayList<IdUserNameValue> users = new java.util.ArrayList<>();
-
-        for (int i=0; i < members.size(); i++) {
-            if (gr.equals("giv")){
-                rank = _giverValuesRanking(corpID, members.get(i).getId(), valueID);
+            java.util.ArrayList<String> deptUserIds = new java.util.ArrayList<>();
+            if (deptID != null){
+                List<Member> deptMembers = em.createNamedQuery(Member.FIND_ALL_BY_CORPID_DEPTID, Member.class)                           //restricted to department.  dept admin
+                                                    .setParameter("corpID", corpID).setParameter("deptID", deptID)
+                                                    .getResultList();
+                for (Member member: deptMembers){
+                    deptUserIds.add(member.getId());
                 }
-            else if (gr.equals("rcv")){
-//                rank = _ReceiverValuesRanking(corpID, members.get(i).getId(), values);
-                rank = _ReceiverValuesRanking(corpID, members.get(i).getId(), valueID);
             }
 
-            users.add(new IdUserNameValue(members.get(i).getId(), members.get(i).getnameFirst(), members.get(i).getnameMiddle(),
-                        members.get(i).getnameLast(),rank));
-        }
+            String retStr="{\"ranking\": [";
+            double rank = 0;
 
-        Collections.sort(users, Collections.reverseOrder());  //List has to be sorted for ranking algorithm to work
+    /*        //Get corporate Values Profile
+            TUComposite activeProfile = em.createNamedQuery(TUComposite.FIND_ACTIVE_BY_CORPID, TUComposite.class).setParameter("corpID", corpID).getSingleResult();
+            List<TU> profileDef = em.createNamedQuery(TU.FIND_ALL_BY_TUCOMPOSITEID, TU.class).setParameter("tucompositeid", activeProfile.getId()).getResultList();
 
-        if (forIndividualUser){
-        IdUserNameValue user = _getPercentRank(users, userID);
-				retStr = String.valueOf(Math.round(user.getValue()));
-/*             retStr += "{\"ID\": \"" + user.getId() +
-                       "\", \"nameFirst\": \"" + user.getNameFirst() +
-                       "\", \"nameMiddle\": \"" + user.getNameMiddle() +
-                       "\", \"nameLast\": \"" + user.getNameLast() +
-                       "\", \"rank\": \"" + Math.round(user.getValue()) + "\"}";
-            retStr += "]}"; */
-        }
-        else {
-			double corpGivingAvg = getAvgGiving(corpID).doubleValue();
-			DecimalFormat formatter = new DecimalFormat("#0.00");
-//            for (int i=0; i<users.size(); i++){
-            for (IdUserNameValue user: users){
-                if (deptUserIds.contains(user.getId()) || deptID == null){         //if deptID != null then restricted by dept(dept admin).  if null then return all(corp admin).
-//                    IdUserNameValue user = _getPercentRank(users, users.get(i).getId());   //Have to do it this way instead of in via db joins since measuring dept members against all corp employees
-                    retStr += "{\"ID\": \"" + user.getId() +
+            HashMap<String, Float> values = new HashMap<String, Float>();
+            for (int i=0; i<profileDef.size(); i++){
+                values.put(profileDef.get(i).getTutypeId(),profileDef.get(i).getRatio());
+            }*/
+
+            java.util.ArrayList<IdUserNameValue> users = new java.util.ArrayList<>();
+
+            for (int i=0; i < members.size(); i++) {
+                if (gr.equals("giv")){
+                    rank = _giverValuesRanking(corpID, members.get(i).getId(), valueID);
+                    }
+                else if (gr.equals("rcv")){
+    //                rank = _ReceiverValuesRanking(corpID, members.get(i).getId(), values);
+                    rank = _ReceiverValuesRanking(corpID, members.get(i).getId(), valueID);
+                }
+
+                users.add(new IdUserNameValue(members.get(i).getId(), members.get(i).getnameFirst(), members.get(i).getnameMiddle(),
+                            members.get(i).getnameLast(),rank));
+            }
+
+            Collections.sort(users, Collections.reverseOrder());  //List has to be sorted for ranking algorithm to work
+
+            if (forIndividualUser){
+            IdUserNameValue user = _getPercentRank(users, userID);
+                    retStr = String.valueOf(Math.round(user.getValue()));
+    /*             retStr += "{\"ID\": \"" + user.getId() +
                            "\", \"nameFirst\": \"" + user.getNameFirst() +
                            "\", \"nameMiddle\": \"" + user.getNameMiddle() +
                            "\", \"nameLast\": \"" + user.getNameLast() +
-                           "\", \"rank\": \"" + formatter.format(user.getValue()/corpGivingAvg) + "\"},\n";
-//                           "\", \"rank\": \"" + Math.round(users.get(i).getValue()) + "\"},\n";
-//                if (i+1 != users.size())
-//                    retStr += ", \n";
-                }
+                           "\", \"rank\": \"" + Math.round(user.getValue()) + "\"}";
+                retStr += "]}"; */
             }
-            if (users.size() != 0) retStr = retStr.substring(0, retStr.length()-2); //remove the last extra comma and lf
-            retStr += "]}";
-        }
+            else {
+                double corpGivingAvg = getAvgGiving(corpID).doubleValue();
+                DecimalFormat formatter = new DecimalFormat("#0.00");
+    //            for (int i=0; i<users.size(); i++){
+                for (IdUserNameValue user: users){
+                    if (deptUserIds.contains(user.getId()) || deptID == null){         //if deptID != null then restricted by dept(dept admin).  if null then return all(corp admin).
+    //                    IdUserNameValue user = _getPercentRank(users, users.get(i).getId());   //Have to do it this way instead of in via db joins since measuring dept members against all corp employees
+                        retStr += "{\"ID\": \"" + user.getId() +
+                               "\", \"nameFirst\": \"" + user.getNameFirst() +
+                               "\", \"nameMiddle\": \"" + user.getNameMiddle() +
+                               "\", \"nameLast\": \"" + user.getNameLast() +
+                               "\", \"rank\": \"" + formatter.format(user.getValue()/corpGivingAvg) + "\"},\n";
+    //                           "\", \"rank\": \"" + Math.round(users.get(i).getValue()) + "\"},\n";
+    //                if (i+1 != users.size())
+    //                    retStr += ", \n";
+                    }
+                }
+                if (users.size() != 0) retStr = retStr.substring(0, retStr.length()-2); //remove the last extra comma and lf
+                retStr += "]}";
+            }
 
-        return retStr;
+            return retStr;
+
+        } catch  (PersistenceException pe){
+            log("_getCorpValues: " + pe.getMessage());
+            return "Error:" + pe.getMessage();
+        } catch (Exception e){
+            log("_getCorpValues: " + e.getMessage());
+            return "Error: " + e.getMessage();
+        }
     }
+
     /*------------------------*/
-/*    @GET
-    @Path("influencedept/{corpID}/{gr}/{wl}/{deptID}") //corpID -- Giver or Receiver -- Wider appeal or Local appeal -- user for whom to send back % ranking only
-//    @Path("influence/{corpID}/{gr}/{wl}/{userID:(/[^/]+?)?}") //corpID -- Giver or Receiver -- Wider appeal or Local appeal -- user for whom to send back decile only
-    @Produces("application/json")
-    public String getInfluenceDept(@PathParam("corpID") String corpID, @PathParam("gr") String gr, @PathParam("wl") String wl, @PathParam("deptID") String deptID) {
-        return _getInfluence (corpID, gr, wl, null, false, false, deptID);
-        }*/
-    /*------------------------*/
+
     @GET
     @Path("influence/{corpID}/{userToken}/{gr}/{wl}/{userID: .*}") //corpID -- Giver or Receiver -- Wider appeal or Local appeal -- user for whom to send back % ranking only
 //    @Path("influence/{corpID}/{gr}/{wl}/{userID:(/[^/]+?)?}") //corpID -- Giver or Receiver -- Wider appeal or Local appeal -- user for whom to send back decile only
@@ -983,8 +885,7 @@ sendmailtls
 		    else
 				return _getInfluence (corpID, gr, wl, null, false, false, null);
 		}
-
-        }
+    }
 
     /*------------------------*/
 /*    @GET
@@ -1005,281 +906,177 @@ sendmailtls
         //Get the average receiving and giving in the corporation (Closed system so receiving should equal giving therefore only need average of one in the stored proc)
 //        String queryStr = "select get_avg('" + corpID + "')";
 //        double corpReceivingAvg = ((Number)em.createNativeQuery(queryStr).getSingleResult()).doubleValue();
-        double corpReceivingAvg = getAvgGiving(corpID).doubleValue();
+        try{
+            double corpReceivingAvg = getAvgGiving(corpID).doubleValue();
 
-        //Get the list of all the employees in the corporation
-        List<Member> members;
-        if (deptID == null)     //Individual against the company or corp admin
-            members = em.createNamedQuery(Member.FIND_ALL_BY_CORPID, Member.class)
-												.setParameter("corpID", corpID)
-												.getResultList();
-        else
-            members = em.createNamedQuery(Member.FIND_ALL_BY_CORPID_DEPTID, Member.class)                           //restricted to department.  dept admin
-												.setParameter("corpID", corpID).setParameter("deptID", deptID)
-												.getResultList();
+            //Get the list of all the employees in the corporation
+            List<Member> members;
+            if (deptID == null)     //Individual against the company or corp admin
+                members = em.createNamedQuery(Member.FIND_ALL_BY_CORPID, Member.class)
+                                                    .setParameter("corpID", corpID)
+                                                    .getResultList();
+            else
+                members = em.createNamedQuery(Member.FIND_ALL_BY_CORPID_DEPTID, Member.class)                           //restricted to department.  dept admin
+                                                    .setParameter("corpID", corpID).setParameter("deptID", deptID)
+                                                    .getResultList();
 
-        String retStr="{\"data\": [";
-        java.util.ArrayList<IdUserNameValue> retArray = new java.util.ArrayList<>();
-        int ownDepIdx = 0;
-        double rank = 0;
+            String retStr="{\"data\": [";
+            java.util.ArrayList<IdUserNameValue> retArray = new java.util.ArrayList<>();
+            int ownDepIdx = 0;
+            double rank = 0;
 
-        for (int i=0; i < members.size(); i++) {
-            List<Object[]> results = new java.util.ArrayList<Object[]>();
-            StringBuilder diagInfo = new StringBuilder();
+            for (int i=0; i < members.size(); i++) {
+                List<Object[]> results = new java.util.ArrayList<Object[]>();
+                StringBuilder diagInfo = new StringBuilder();
 
-            if (gr.equals("giv")){
-                results = _giverTotalsPerDept(corpID, members.get(i).getId(), deptID);      //totals that the user gave to each department
-                }
-            else if (gr.equals("rcv")){
-                results = _receiverTotalsPerDept(corpID, members.get(i).getId(), deptID);   //totals that the user received from each department
-            }
-
-            if (gr.equals("giv") || gr.equals("rcv")){
-                ownDepIdx = -1;
-                for (int j=0; j < results.size(); j++){                              //find user's own department
-                    if (results.get(j)[1].equals(members.get(i).getDepartmentID())){
-                        ownDepIdx = j;
-                        break;
+                if (gr.equals("giv")){
+                    results = _giverTotalsPerDept(corpID, members.get(i).getId(), deptID);      //totals that the user gave to each department
                     }
+                else if (gr.equals("rcv")){
+                    results = _receiverTotalsPerDept(corpID, members.get(i).getId(), deptID);   //totals that the user received from each department
                 }
 
-                if (wl.equals("wide")){
-                    rank = Analysis.COIScore(results, numOfDepts, ownDepIdx, corpReceivingAvg, diag, diagInfo);
-                }else if (wl.equals("local")){
-                    rank = Analysis.COTScore(results, numOfDepts, ownDepIdx, corpReceivingAvg, diag, diagInfo);
-                } else return "FAIL";
-            }
-            else if (gr.equals("both")) {
-                double recRank, givRank = 0.0;
-
-                //Get ranking for giving
-                results = _giverTotalsPerDept(corpID, members.get(i).getId(), deptID);      //totals that the user gave to each department
-                ownDepIdx = -1;
-                for (int j=0; j < results.size(); j++){                              //find user's own department
-                    if (results.get(j)[1].equals(members.get(i).getDepartmentID())){
-                        ownDepIdx = j;
-                        break;
+                if (gr.equals("giv") || gr.equals("rcv")){
+                    ownDepIdx = -1;
+                    for (int j=0; j < results.size(); j++){                              //find user's own department
+                        if (results.get(j)[1].equals(members.get(i).getDepartmentID())){
+                            ownDepIdx = j;
+                            break;
+                        }
                     }
-                }
-                if (wl.equals("wide")){
-                    givRank = Analysis.COIScore(results, numOfDepts, ownDepIdx, corpReceivingAvg, diag, diagInfo);
-                }else if (wl.equals("local")){
-                    givRank = Analysis.COTScore(results, numOfDepts, ownDepIdx, corpReceivingAvg, diag, diagInfo);
-                } else return "FAIL";
 
-                //Now get ranking for receiving
-                results = _receiverTotalsPerDept(corpID, members.get(i).getId(), deptID);   //totals that the user received from each department
-                ownDepIdx = -1;
-                for (int j=0; j < results.size(); j++){                              //find user's own department
-                    if (results.get(j)[1].equals(members.get(i).getDepartmentID())){
-                        ownDepIdx = j;
-                        break;
+                    if (wl.equals("wide")){
+                        rank = Analysis.COIScore(results, numOfDepts, ownDepIdx, corpReceivingAvg, diag, diagInfo);
+                    }else if (wl.equals("local")){
+                        rank = Analysis.COTScore(results, numOfDepts, ownDepIdx, corpReceivingAvg, diag, diagInfo);
+                    } else return "FAIL";
+                }
+                else if (gr.equals("both")) {
+                    double recRank, givRank = 0.0;
+
+                    //Get ranking for giving
+                    results = _giverTotalsPerDept(corpID, members.get(i).getId(), deptID);      //totals that the user gave to each department
+                    ownDepIdx = -1;
+                    for (int j=0; j < results.size(); j++){                              //find user's own department
+                        if (results.get(j)[1].equals(members.get(i).getDepartmentID())){
+                            ownDepIdx = j;
+                            break;
+                        }
                     }
-                }
-                if (wl.equals("wide")){
-                    recRank = Analysis.COIScore(results, numOfDepts, ownDepIdx, corpReceivingAvg, diag, diagInfo);
-                }else if (wl.equals("local")){
-                    recRank = Analysis.COTScore(results, numOfDepts, ownDepIdx, corpReceivingAvg, diag, diagInfo);
-                } else return "FAIL";
+                    if (wl.equals("wide")){
+                        givRank = Analysis.COIScore(results, numOfDepts, ownDepIdx, corpReceivingAvg, diag, diagInfo);
+                    }else if (wl.equals("local")){
+                        givRank = Analysis.COTScore(results, numOfDepts, ownDepIdx, corpReceivingAvg, diag, diagInfo);
+                    } else return "FAIL";
 
-                rank = givRank + recRank;
+                    //Now get ranking for receiving
+                    results = _receiverTotalsPerDept(corpID, members.get(i).getId(), deptID);   //totals that the user received from each department
+                    ownDepIdx = -1;
+                    for (int j=0; j < results.size(); j++){                              //find user's own department
+                        if (results.get(j)[1].equals(members.get(i).getDepartmentID())){
+                            ownDepIdx = j;
+                            break;
+                        }
+                    }
+                    if (wl.equals("wide")){
+                        recRank = Analysis.COIScore(results, numOfDepts, ownDepIdx, corpReceivingAvg, diag, diagInfo);
+                    }else if (wl.equals("local")){
+                        recRank = Analysis.COTScore(results, numOfDepts, ownDepIdx, corpReceivingAvg, diag, diagInfo);
+                    } else return "FAIL";
+
+                    rank = givRank + recRank;
+                }
+                else {
+                    return "FAIL";
+                }
+
+                if (diag){
+                    retArray.add(new IdUserNameValue(members.get(i).getId(), members.get(i).getnameFirst(), members.get(i).getnameMiddle(),
+                            members.get(i).getnameLast(),rank, diagInfo.toString()));
+                }
+                else{
+                    retArray.add(new IdUserNameValue(members.get(i).getId(), members.get(i).getnameFirst(), members.get(i).getnameMiddle(),
+                            members.get(i).getnameLast(),rank));
+                }
             }
-            else {
-                return "FAIL";
-            }
+
+    //            Collections.sort(retArray);
+            Collections.sort(retArray, Collections.reverseOrder()) ;
 
             if (diag){
-                retArray.add(new IdUserNameValue(members.get(i).getId(), members.get(i).getnameFirst(), members.get(i).getnameMiddle(),
-                        members.get(i).getnameLast(),rank, diagInfo.toString()));
-            }
-            else{
-                retArray.add(new IdUserNameValue(members.get(i).getId(), members.get(i).getnameFirst(), members.get(i).getnameMiddle(),
-                        members.get(i).getnameLast(),rank));
-            }
-        }
+    //            return retArray.get(0).getDiagnostics();
+    /*              for (int i=0; i < retArray.size(); i++){
+                      retStr += retArray.get(i).getDiagnostics() + "," + retArray.get(i).getNameFirst() + retArray.get(i).getNameLast() + "," + retArray.get(i).getValue() + i + "\n";
+                  }
+                  return retStr;*/
 
-//            Collections.sort(retArray);
-        Collections.sort(retArray, Collections.reverseOrder()) ;
+                for (int i=0; i < retArray.size(); i++){
+                    String[] diagnostics = retArray.get(i).getDiagnostics().split(",");
+                    retStr += "{\"ID\": \"" + retArray.get(i).getId() +
+                               "\", \"nameFirst\": \"" + retArray.get(i).getNameFirst() +
+                               "\", \"nameMiddle\": \"" + retArray.get(i).getNameMiddle() +
+                               "\", \"nameLast\": \"" + retArray.get(i).getNameLast() +
+                               "\", \"Rank\": \"" + formatter.format(retArray.get(i).getValue()) +
+                               "\", \"Mean\": \"" + diagnostics[1] +
+                               "\", \"Std Dev\": \"" + diagnostics[2] +
+                               "\", \"Sum\": \"" + diagnostics[3] +
+                               "\", \"GRDeptRatio\": \"" + diagnostics[4] +
+                               "\", \"GRDepts\": \"" + diagnostics[5] +
+                               "\", \"TotalDepts\": \"" + diagnostics[6];
 
-        if (diag){
-//            return retArray.get(0).getDiagnostics();
-/*              for (int i=0; i < retArray.size(); i++){
-                  retStr += retArray.get(i).getDiagnostics() + "," + retArray.get(i).getNameFirst() + retArray.get(i).getNameLast() + "," + retArray.get(i).getValue() + i + "\n";
-              }
-              return retStr;*/
-
-            for (int i=0; i < retArray.size(); i++){
-                String[] diagnostics = retArray.get(i).getDiagnostics().split(",");
-                retStr += "{\"ID\": \"" + retArray.get(i).getId() +
-                           "\", \"nameFirst\": \"" + retArray.get(i).getNameFirst() +
-                           "\", \"nameMiddle\": \"" + retArray.get(i).getNameMiddle() +
-                           "\", \"nameLast\": \"" + retArray.get(i).getNameLast() +
-                           "\", \"Rank\": \"" + formatter.format(retArray.get(i).getValue()) +
-                           "\", \"Mean\": \"" + diagnostics[1] +
-                           "\", \"Std Dev\": \"" + diagnostics[2] +
-                           "\", \"Sum\": \"" + diagnostics[3] +
-                           "\", \"GRDeptRatio\": \"" + diagnostics[4] +
-                           "\", \"GRDepts\": \"" + diagnostics[5] +
-                           "\", \"TotalDepts\": \"" + diagnostics[6];
-
-                for (int k=7; k<diagnostics.length-1; k++){
-                    retStr += "\", \"Dept"+k+"\": \"" + diagnostics[k];
+                    for (int k=7; k<diagnostics.length-1; k++){
+                        retStr += "\", \"Dept"+k+"\": \"" + diagnostics[k];
+                    }
+                    retStr += "\", \"OwnDeptIdx\": \"" + diagnostics[diagnostics.length-1];
+                    retStr += "\"},\n";
                 }
-                retStr += "\", \"OwnDeptIdx\": \"" + diagnostics[diagnostics.length-1];
-                retStr += "\"},\n";
-            }
-            if (retArray.size() != 0) retStr = retStr.substring(0, retStr.length()-2); //remove the last extra comma and lf
-            retStr += "]}";
-            return retStr;
-        }
-        else if (forIndividualUser){
-                IdUserNameValue user = _getPercentRank(retArray, userID);
-                retStr += "{\"ID\": \"" + user.getId() +
-                           "\", \"nameFirst\": \"" + user.getNameFirst() +
-                           "\", \"nameMiddle\": \"" + user.getNameMiddle() +
-                           "\", \"nameLast\": \"" + user.getNameLast() +
-                           "\", \"Index\": \"" + Math.round(user.getValue()) + "\"}";
+                if (retArray.size() != 0) retStr = retStr.substring(0, retStr.length()-2); //remove the last extra comma and lf
                 retStr += "]}";
                 return retStr;
-        }
-        else{
-
-            for (int i=0; i < retArray.size(); i++){
-//                IdUserNameValue user = _getPercentRank(retArray, userID);
-
-/*            for (int i=0; i < retArray.size(); i++){
-                IdUserNameValue user = _getPercentRank(retArray, retArray.get(i).getId());      //Could get percentage rank but for now raw index numbers
-                retStr += "{\"ID\": \"" + user.getId() +
-                           "\", \"nameFirst\": \"" + user.getNameFirst() +
-                           "\", \"nameMiddle\": \"" + user.getNameMiddle() +
-                           "\", \"nameLast\": \"" + user.getNameLast() +
-                           "\", \"Index\": \"" + Math.round(user.getValue()) + "\"},";*/
-
-                retStr += "{\"ID\": \"" + retArray.get(i).getId() +
-                           "\", \"nameFirst\": \"" + retArray.get(i).getNameFirst() +
-                           "\", \"nameMiddle\": \"" + retArray.get(i).getNameMiddle() +
-                           "\", \"nameLast\": \"" + retArray.get(i).getNameLast() +
-                           "\", \"Index\": \"" + formatter.format(retArray.get(i).getValue()) + "\"},";
-
             }
+            else if (forIndividualUser){
+                    IdUserNameValue user = _getPercentRank(retArray, userID);
+                    retStr += "{\"ID\": \"" + user.getId() +
+                               "\", \"nameFirst\": \"" + user.getNameFirst() +
+                               "\", \"nameMiddle\": \"" + user.getNameMiddle() +
+                               "\", \"nameLast\": \"" + user.getNameLast() +
+                               "\", \"Index\": \"" + Math.round(user.getValue()) + "\"}";
+                    retStr += "]}";
+                    return retStr;
+            }
+            else{
+
+                for (int i=0; i < retArray.size(); i++){
+    //                IdUserNameValue user = _getPercentRank(retArray, userID);
+
+    /*            for (int i=0; i < retArray.size(); i++){
+                    IdUserNameValue user = _getPercentRank(retArray, retArray.get(i).getId());      //Could get percentage rank but for now raw index numbers
+                    retStr += "{\"ID\": \"" + user.getId() +
+                               "\", \"nameFirst\": \"" + user.getNameFirst() +
+                               "\", \"nameMiddle\": \"" + user.getNameMiddle() +
+                               "\", \"nameLast\": \"" + user.getNameLast() +
+                               "\", \"Index\": \"" + Math.round(user.getValue()) + "\"},";*/
+
+                    retStr += "{\"ID\": \"" + retArray.get(i).getId() +
+                               "\", \"nameFirst\": \"" + retArray.get(i).getNameFirst() +
+                               "\", \"nameMiddle\": \"" + retArray.get(i).getNameMiddle() +
+                               "\", \"nameLast\": \"" + retArray.get(i).getNameLast() +
+                               "\", \"Index\": \"" + formatter.format(retArray.get(i).getValue()) + "\"},";
+
+                }
+            }
+            if (retArray.size() != 0) retStr = retStr.substring(0, retStr.length()-1); //remove the last extra comma
+            retStr += "]}";
+            return retStr;
+
+        } catch  (PersistenceException pe){
+            log("_getInfluence: " + pe.getMessage());
+            return "Error:" + pe.getMessage();
+        } catch (Exception e){
+            log("_getInfluence: " + e.getMessage());
+            return "Error: " + e.getMessage();
         }
-        if (retArray.size() != 0) retStr = retStr.substring(0, retStr.length()-1); //remove the last extra comma
-        retStr += "]}";
-        return retStr;
     }
-
-    /*------------------------*/
-
-    /*    @GET
-    @Path("influencercv/{corpID}")
-    @Produces("application/json")
-    public String getInfluenceRcv(@PathParam("corpID") String corpID) {
-        DecimalFormat formatter = new DecimalFormat("#0.00");
-
-        List<Member> members = em.createNamedQuery(Member.FIND_ALL_BY_CORPID, Member.class)
-												.setParameter("corpID", corpID)
-												.getResultList();
-
-        String queryStr, retStr="{\"data\": [";
-
-        for (int i=0; i < members.size(); i++) {
-            List<Object> results = _giverTotalsPerDept(corpID, members.get(i).getId());
-            double[] userTotalsPerDept = new double[results.size()];
-
-            for (int j=0; j < results.size(); j++) {
-                userTotalsPerDept[j] = Double.parseDouble(results.get(j).toString());;
-            }
-            double[] ans = _msds (userTotalsPerDept, results.size()); //mean=ans[0], stddev=ans[1], sum=ans[2]
-            double rank = ans[2]*(1-ans[1]*2/100);
-            if (Double.isNaN(rank)) rank = 0;
-                retStr += "{\"ID\": \"" + members.get(i).getId() +
-                            "\", \"nameFirst\": \"" + members.get(i).getnameFirst() +
-                            "\", \"nameMiddle\": \"" + members.get(i).getnameMiddle() +
-                            "\", \"nameLast\": \"" + members.get(i).getnameLast() +
-                            "\", \"Index\": \"" + formatter.format(rank) + "\"},";
-        }
-        if (members.size() != 0) retStr = retStr.substring(0, retStr.length()-1); //remove the last extra comma
-        retStr += "]}";
-        return retStr;
-    }*/
-
-    /*------------------------*/
-
-/*    @GET
-    @Path("influencegiv/{corpID}")
-    @Produces("application/json")
-    public String getInfluenceGiv(@PathParam("corpID") String corpID) {
-        DecimalFormat formatter = new DecimalFormat("#0.00");
-
-        List<Member> members = em.createNamedQuery(Member.FIND_ALL_BY_CORPID, Member.class)
-												.setParameter("corpID", corpID)
-												.getResultList();
-
-        String queryStr, retStr="{\"data\": [";
-
-        for (int i=0; i < members.size(); i++) {
-            List<Object> results = _receiverTotalsPerDept(corpID, members.get(i).getId());
-            double[] userTotalsPerDept = new double[results.size()];
-
-            for (int j=0; j < results.size(); j++) {
-                userTotalsPerDept[j] = Double.parseDouble(results.get(j).toString());;
-            }
-            double[] ans = _msds (userTotalsPerDept, results.size()); //mean=ans[0], stddev=ans[1], sum=ans[2]
-            double rank = ans[2]*(1-ans[1]*2/100);
-            if (Double.isNaN(rank)) rank = 0;
-                retStr += "{\"ID\": \"" + members.get(i).getId() +
-                            "\", \"nameFirst\": \"" + members.get(i).getnameFirst() +
-                            "\", \"nameMiddle\": \"" + members.get(i).getnameMiddle() +
-                            "\", \"nameLast\": \"" + members.get(i).getnameLast() +
-                            "\", \"Index\": \"" + formatter.format(rank) + "\"},";
-        }
-        if (members.size() != 0) retStr = retStr.substring(0, retStr.length()-1); //remove the last extra comma
-        retStr += "]}";
-        return retStr;
-    }*/
-
-    /*------------------------*/
-
-/*    @GET
-    @Path("reachrcv/{corpID}")
-    @Produces("application/json")
-    public String getReachRcv(@PathParam("corpID") String corpID) {
-        DecimalFormat formatter = new DecimalFormat("#0.00");
-
-        List<Member> members = em.createNamedQuery(Member.FIND_ALL_BY_CORPID, Member.class)
-												.setParameter("corpID", corpID)
-												.getResultList();
-
-        String queryStr, retStr="{\"data\": [";
-
-        for (int i=0; i < members.size(); i++) {
-
-            queryStr = "SELECT COUNT(GIVINGMEMBERDEPT.DEPTNAME) AS DEPTTOTAL " +
-                        "FROM STARGIVEN " +
-                        "INNER JOIN MEMBER GIVINGMEMBER ON STARGIVEN.GIVINGMEMBERID = GIVINGMEMBER.ID " +
-                        "INNER JOIN DEPTCORP GIVINGMEMBERDEPT ON GIVINGMEMBER.DEPARTMENTID = GIVINGMEMBERDEPT.ID " +
-                        "WHERE STARGIVEN.RECEIVINGMEMBERID = '" + members.get(i).getId() + "' "  +
-                        "AND GIVINGMEMBER.CORPID = '" + corpID + "' "  +
-                        "GROUP BY GIVINGMEMBERDEPT.DEPTNAME " +
-                        "ORDER BY DEPTTOTAL DESC";
-
-            List<Object> results = em.createNativeQuery(queryStr).getResultList();
-
-            double summ = 0;
-            for (int j=0; j < results.size(); j++) {
-                 summ += Double.parseDouble(results.get(j).toString());
-            }
-            retStr += "{\"ID\": \"" + members.get(i).getId() +
-                        "\", \"nameFirst\": \"" + members.get(i).getnameFirst() +
-                        "\", \"nameMiddle\": \"" + members.get(i).getnameMiddle() +
-                        "\", \"nameLast\": \"" + members.get(i).getnameLast() +
-                        "\", \"Index\": \"" + formatter.format(summ) + "\"},";
-//                        "\", \"Index\": \"" + String.format("%.2f", summ) + "\"},";
-        }
-        if (members.size() != 0) retStr = retStr.substring(0, retStr.length()-1); //remove the last extra comma
-        retStr += "]}";
-        return retStr;
-    }*/
 
     /*------------------------*/
 
@@ -1330,24 +1127,33 @@ sendmailtls
     	if (!validUserAndLevel(corpID, userToken, null,"201"))            //Make sure the user is at least a dept admin
 	    	return "{\"data\": {\"giver\": []}}";
 
-        List<Object[]> results = _deptGiverTotals(corpID);
+        try{
+            List<Object[]> results = _deptGiverTotals(corpID);
 
-        for (int i=0; i < results.size(); i++) {
-            retStr += "{\"Dept\": \"" + results.get(i)[0] + "\",\"Total\": \"" + (String) (results.get(i)[1]).toString()+ "\"},";
+            for (int i=0; i < results.size(); i++) {
+                retStr += "{\"Dept\": \"" + results.get(i)[0] + "\",\"Total\": \"" + (String) (results.get(i)[1]).toString()+ "\"},";
+            }
+            if (results.size() != 0) retStr = retStr.substring(0, retStr.length()-1); //remove the last extra comma
+            retStr += "], \"receiver\": [";
+
+    //        results = em.createNativeQuery(queryStr).getResultList();
+            results = _deptRecTotals(corpID);
+
+            for (int i=0; i < results.size(); i++) {
+                retStr += "{\"Dept\": \"" + results.get(i)[0] + "\",\"Total\": \"" + (String) (results.get(i)[1]).toString()+ "\"},";
+            }
+            if (results.size() != 0) retStr = retStr.substring(0, retStr.length()-1); //remove the last extra comma
+            retStr += "]}}";
+
+            return retStr;
+
+        } catch  (PersistenceException pe){
+            log("depttotals: " + pe.getMessage());
+            return "Error:" + pe.getMessage();
+        } catch (Exception e){
+            log("depttotals: " + e.getMessage());
+            return "Error: " + e.getMessage();
         }
-        if (results.size() != 0) retStr = retStr.substring(0, retStr.length()-1); //remove the last extra comma
-        retStr += "], \"receiver\": [";
-
-//        results = em.createNativeQuery(queryStr).getResultList();
-        results = _deptRecTotals(corpID);
-
-        for (int i=0; i < results.size(); i++) {
-            retStr += "{\"Dept\": \"" + results.get(i)[0] + "\",\"Total\": \"" + (String) (results.get(i)[1]).toString()+ "\"},";
-        }
-        if (results.size() != 0) retStr = retStr.substring(0, retStr.length()-1); //remove the last extra comma
-        retStr += "]}}";
-
-        return retStr;
     }
 
     /*----------------------------*/
@@ -1423,11 +1229,13 @@ sendmailtls
         return retStr;
 
     } catch (javax.persistence.NoResultException pe) {
-//            return "NO RESULT" + "loggingMember.getDepartmentID()"+loggingMember.getDepartmentID()+"deptcorp.getDeptName()"+deptcorp.getDeptName();
+        log("getstars: " + pe.getMessage());
         return "NO RESULT";
     } catch  (javax.persistence.PersistenceException pe){
+        log("getstars: " + pe.getMessage());
         return "ERROR: " + pe.getMessage();
     } catch (Exception e){
+        log("getstars: " + e.getMessage());
         return "ERROR: " + e.getMessage();
     }
   }
@@ -1458,69 +1266,6 @@ sendmailtls
 		
     return retStr;
 	}
-/*
-IdUserNameValue test = new IdUserNameValue();
-
-test.setId("1");
-
-
-        IdUserNameValue[] Sorted = new IdUserNameValue[3];
-
-            Sorted[0] = new IdUserNameValue();
-            Sorted[0].setId("1");
-            Sorted[0].setNameFirst("Henry");
-            Sorted[0].setNameMiddle("David");
-            Sorted[0].setNameLast("Thoreau");
-            Sorted[0].setValue(1.1);
-
-            Sorted[1] = new IdUserNameValue();
-            Sorted[1].setId("2");
-            Sorted[1].setNameFirst("Henry2");
-            Sorted[1].setNameMiddle("David2");
-            Sorted[1].setNameLast("Thoreau2");
-            Sorted[1].setValue(1.2);
-
-            Sorted[2] = new IdUserNameValue();
-            Sorted[2].setId("3");
-            Sorted[2].setNameFirst("Henry3");
-            Sorted[2].setNameMiddle("David3");
-            Sorted[2].setNameLast("Thoreau3");
-            Sorted[2].setValue(0.2);
-
-            Arrays.sort(Sorted);
-
-            return Sorted[0].getNameFirst()+
-                    Sorted[0].getValue()+
-
-                    Sorted[1].getNameFirst()+
-                    Sorted[1].getValue()+
-
-                    Sorted[2].getNameFirst()+
-                    Sorted[2].getValue();
-*/
-
-        /*
-        //Add Departments and Corporations
-        Corp corp = new Corp("Sierra Club", "http://www.sierraclub.org/");
-        em.persist(corp);
-        return ("corp="+corp.getName()+corp.getId()+corp.getWebsite());
-*/
-
-
-
-
-
-/*        return "{\"data\":  [" +
-        "        {\"a\": \"1The Lord of the Rings\", \"b\": \"J. R. R. Tolkien\"}," +
-        "        {\"a\": \"2Le Petit Prince (The Little Prince)\", \"b\": \"Antoine de Saint-Exupéry\"}," +
-        "        {\"a\": \"3Harry Potter and the Philosopher's Stone\", \"b\": \"J. K. Rowling\"}," +
-        "        {\"a\": \"4And Then There Were None\", \"b\": \"Agatha Christie\"}," +
-        "        {\"a\": \"5Dream of the Red Chamber\", \"b\": \"Cao Xueqin\"}," +
-        "        {\"a\": \"6The Hobbit\", \"b\": \"J. R. R. Tolkien\"}," +
-        "        {\"a\": \"7She: A History of Adventure\", \"b\": \"H. Rider Haggard\"}" +
-        "      ]}";
-    }*/
-
 
   /*--------------------------*/
 
@@ -1528,36 +1273,44 @@ test.setId("1");
   @Path("getqualities/{corpID}/{userToken}")
   @Produces("application/json")
   public String getQualities(@PathParam("corpID") String corpID, @PathParam("userToken") String userToken) {
-/*
-{
-	"qualities": [{
-		"id": "221",
-		"name": "Nike1",
-		"description": "blah blah"
-	}, {
-		"id": "221",
-		"name": "Nike1",
-		"description": "blah blah"
-	}]
-}
- */
-    if (!validUserAndLevel(corpID, userToken, null, "301"))
-		return "{\"qualities\": [{}]}";
+    /*
+        {
+            "qualities": [{
+                "id": "221",
+                "name": "Nike1",
+                "description": "blah blah"
+            }, {
+                "id": "221",
+                "name": "Nike1",
+                "description": "blah blah"
+            }]
+        }
+         */
+        if (!validUserAndLevel(corpID, userToken, null, "301"))
+            return "{\"qualities\": [{}]}";
+        try{
+            List<TUType> tut = em.createNamedQuery(TUType.FIND_ALL, TUType.class).getResultList();
 
-	List<TUType> tut = em.createNamedQuery(TUType.FIND_ALL, TUType.class).getResultList();
+            String retStr = "{\"qualities\": [{";
 
-    String retStr = "{\"qualities\": [{";
+            for (int i=0; i<tut.size(); i++){
+                retStr += "\"id\": \"" + tut.get(i).getId() + "\",";
+                retStr += "\"name\": \"" + tut.get(i).getName() + "\",";
+                retStr += "\"description\": \"" + tut.get(i).getDescription() + "\"";
+                if (i+1 != tut.size() )
+                    retStr += "}, {";
+            }
 
-    for (int i=0; i<tut.size(); i++){
-        retStr += "\"id\": \"" + tut.get(i).getId() + "\",";
-        retStr += "\"name\": \"" + tut.get(i).getName() + "\",";
-        retStr += "\"description\": \"" + tut.get(i).getDescription() + "\"";
-        if (i+1 != tut.size() )
-            retStr += "}, {";
-    }
+            retStr += "}]}";
+            return retStr;
+        } catch  (PersistenceException pe){
+            log("getqualities: " + pe.getMessage());
+            return "Error:" + pe.getMessage();
+        } catch (Exception e){
+            log("getqualities: " + e.getMessage());
+            return "Error: " + e.getMessage();
+        }
 
-    retStr += "}]}";
-    return retStr;
   }
 
 
@@ -1609,14 +1362,16 @@ test.setId("1");
 				retStr += "}, {";
 		}
     } catch (NoResultException pe) {
+        log("getactivequalities: " + pe.getMessage());
 		return "{\"qualities\": [{}]}";
 	} catch (PersistenceException pe) {
+        log("getactivequalities: " + pe.getMessage());
 		return "FAIL: " + pe.getMessage();
 	}
     retStr += "}]}";
     return retStr;
   }
-  
+
   
   /*--------------------------*/
 
@@ -1709,47 +1464,49 @@ test.setId("1");
     String retStr = "{\"qualities\": {" +
                         "\"activecompid\": ";
 	try{
-	TUComposite activeTuComposite = em.createNamedQuery(TUComposite.FIND_ACTIVE_BY_CORPID, TUComposite.class).setParameter("corpID", corpID)
-                                                                                                             .getSingleResult();
-    retStr += "\"" + activeTuComposite.getId() + "\", ";
+        TUComposite activeTuComposite = em.createNamedQuery(TUComposite.FIND_ACTIVE_BY_CORPID, TUComposite.class).setParameter("corpID", corpID)
+                                                                                                                 .getSingleResult();
+        retStr += "\"" + activeTuComposite.getId() + "\", ";
 
-    retStr +=  "\"activecompname\": " + "\"" + activeTuComposite.getName() + "\", ";
+        retStr +=  "\"activecompname\": " + "\"" + activeTuComposite.getName() + "\", ";
 
-    retStr +=           "\"composites\": [{";
+        retStr +=           "\"composites\": [{";
 
-	List<TUComposite> tuComposites = em.createNamedQuery(TUComposite.FIND_ALL_BY_CORPID, TUComposite.class).setParameter("corpID", corpID)
-                                                                                                           .getResultList();
-    for (int i=0; i<tuComposites.size(); i++){
-        retStr +=               "\"id\": \"" + tuComposites.get(i).getId() + "\",";
-        retStr +=               "\"name\": \"" + tuComposites.get(i).getName() + "\",";
+        List<TUComposite> tuComposites = em.createNamedQuery(TUComposite.FIND_ALL_BY_CORPID, TUComposite.class).setParameter("corpID", corpID)
+                                                                                                               .getResultList();
+        for (int i=0; i<tuComposites.size(); i++){
+            retStr +=               "\"id\": \"" + tuComposites.get(i).getId() + "\",";
+            retStr +=               "\"name\": \"" + tuComposites.get(i).getName() + "\",";
 
-        List<Object[]> tus = em.createNamedQuery(TU.FIND_ALL_BY_TUCOMPOSITEID_JOIN)
-                                            .setParameter("tucompositeid", tuComposites.get(i).getId())
-                                            .getResultList();
-/*		Query query = em.createQuery("SELECT b.id, b.tutypeId, b.ratio, p.name FROM TU b INNER JOIN TUType p ON b.tutypeId = p.id where b.tuCompositeId = :tucompositeid");
-		query.setParameter("tucompositeid", tuComposites.get(i).getId());
-		List<Object[]> tus = query.getResultList();*/
+            List<Object[]> tus = em.createNamedQuery(TU.FIND_ALL_BY_TUCOMPOSITEID_JOIN)
+                                                .setParameter("tucompositeid", tuComposites.get(i).getId())
+                                                .getResultList();
+    /*		Query query = em.createQuery("SELECT b.id, b.tutypeId, b.ratio, p.name FROM TU b INNER JOIN TUType p ON b.tutypeId = p.id where b.tuCompositeId = :tucompositeid");
+            query.setParameter("tucompositeid", tuComposites.get(i).getId());
+            List<Object[]> tus = query.getResultList();*/
 
-        retStr +=                   "\"values\": [{";
+            retStr +=                   "\"values\": [{";
 
-        for (int j=0; j<tus.size(); j++){
+            for (int j=0; j<tus.size(); j++){
 
-            retStr +=                   "\"tuid\": \"" + tus.get(j)[0] + "\", \"tutypeid\": \"" + tus.get(j)[1] + "\", \"tutypename\": \"" + tus.get(j)[3] + "\", \"ratio\": " + (tus.get(j)[2]).toString();
+                retStr +=                   "\"tuid\": \"" + tus.get(j)[0] + "\", \"tutypeid\": \"" + tus.get(j)[1] + "\", \"tutypename\": \"" + tus.get(j)[3] + "\", \"ratio\": " + (tus.get(j)[2]).toString();
 
-            if (j+1 != tus.size() ){
-                retStr +=       "}, {";}
+                if (j+1 != tus.size() ){
+                    retStr +=       "}, {";}
+            }
+
+            retStr +=               "}] ";
+            if (i+1 != tuComposites.size() ){
+            retStr +=          "}, {";}
         }
-
-        retStr +=               "}] ";
-        if (i+1 != tuComposites.size() ){
-        retStr +=          "}, {";}
-    }
-    retStr +=               "}]";
-    retStr +=           "}";
-    retStr +=        "}";
+        retStr +=               "}]";
+        retStr +=           "}";
+        retStr +=        "}";
     } catch (NoResultException pe) {
+	    log("getqualitiescomposite: " + pe.getMessage());
 		return "{\"qualities\": [{}]}";
 	} catch (PersistenceException pe) {
+	    log("getqualitiescomposite: " + pe.getMessage());
 		return "FAIL: " + pe.getMessage();
 	}
     return retStr;
@@ -1775,10 +1532,13 @@ test.setId("1");
 		return corpAllowedURLs.getCorpID();
 
 	} catch (NoResultException pe) {
+	        log("_getCorpIDFromUID: " + pe.getMessage());
             return "NO RESULT";
     } catch  (PersistenceException pe){
+	        log("_getCorpIDFromUID: " + pe.getMessage());
             return "ERROR: " + pe.getMessage();
     } catch (Exception e){
+	        log("_getCorpIDFromUID: " + e.getMessage());
             return "ERROR: " + e.getMessage();
     }
   }
@@ -1818,16 +1578,18 @@ test.setId("1");
         retStr += "]}";
 		return retStr;
 	} catch (NoResultException pe) {
+    	    log("getdeptbycorp: " + pe.getMessage());
             return "{\"departments\": []}";
     } catch  (PersistenceException pe){
+    	    log("getdeptbycorp: " + pe.getMessage());
             return "ERROR: " + pe.getMessage();
     } catch (Exception e){
+    	    log("getdeptbycorp: " + e.getMessage());
             return "ERROR: " + e.getMessage();
     }
   }
 
     /*--------------------------*/
-
 
   @POST
   @Path("corpregistered")
@@ -1956,10 +1718,13 @@ public boolean validDeptAndLevel(String CorpID, String userTokenBase64, String d
 		return member.getRoleID();
 
  	} catch (NoResultException pe) {
+	        log("getUserRoleID: " + pe.getMessage());
             return "Error:No Record Found. " + pe.getMessage();
     } catch  (PersistenceException pe){
+	        log("getUserRoleID: " + pe.getMessage());
             return "Error:" + pe.getMessage();
     } catch (Exception e){
+	        log("getUserRoleID: " + e.getMessage());
             return "Error: " + e.getMessage();
     }
   }
@@ -1975,10 +1740,13 @@ public boolean validDeptAndLevel(String CorpID, String userTokenBase64, String d
 		return member.getDepartmentID();
 
  	} catch (NoResultException pe) {
+	        log("getUserDeptID: " + pe.getMessage());
             return "Error:No Record Found. " + pe.getMessage();
     } catch  (PersistenceException pe){
+	        log("getUserDeptID: " + pe.getMessage());
             return "Error:" + pe.getMessage();
     } catch (Exception e){
+	        log("getUserDeptID: " + e.getMessage());
             return "Error: " + e.getMessage();
     }
   }
