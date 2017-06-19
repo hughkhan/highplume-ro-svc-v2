@@ -718,7 +718,6 @@ select get_avg('1');
 		    log("_getCorpValuesForIndividual: " + pe.getMessage());
 			return "FAIL: " + pe.getMessage();
 		}
-		
 	}
 	
     /*------------------------*/
@@ -1754,89 +1753,3 @@ public boolean validDeptAndLevel(String CorpID, String userTokenBase64, String d
     /*--------------------------*/
 
 }
-
-/*
-
-package com.mkyong.common;
-
-import java.util.Properties;
-import javax.mail.Message;
-import javax.mail.MessagingException;
-import javax.mail.PasswordAuthentication;
-import javax.mail.Session;
-import javax.mail.Transport;
-import javax.mail.internet.InternetAddress;
-import javax.mail.internet.MimeMessage;
-
-public class SendMailSSL {
-	public static void main(String[] args) {
-		Properties props = new Properties();
-		props.put("mail.smtp.host", "smtp.gmail.com");
-		props.put("mail.smtp.socketFactory.port", "465");
-		props.put("mail.smtp.socketFactory.class",
-				"javax.net.ssl.SSLSocketFactory");
-		props.put("mail.smtp.auth", "true");
-		props.put("mail.smtp.port", "465");
-
-		Session session = Session.getDefaultInstance(props,
-			new javax.mail.Authenticator() {
-				protected PasswordAuthentication getPasswordAuthentication() {
-					return new PasswordAuthentication("username","password");
-				}
-			});
-
-		try {
-
-			Message message = new MimeMessage(session);
-			message.setFrom(new InternetAddress("from@no-spam.com"));
-			message.setRecipients(Message.RecipientType.TO,
-					InternetAddress.parse("to@no-spam.com"));
-			message.setSubject("Testing Subject");
-			message.setText("Dear Mail Crawler," +
-					"\n\n No spam to my email, please!");
-
-			Transport.send(message);
-
-			System.out.println("Done");
-
-		} catch (MessagingException e) {
-			throw new RuntimeException(e);
-		}
-	}
-}*/
-
-
-/*
-
-
-  @POST
-  @Path("sendmail")
-  @Consumes(MediaType.APPLICATION_JSON)
-  @Produces(MediaType.TEXT_PLAIN)
-  public String sendMail(String message) {
-
-      String to = "sonoojaiswal1988@gmail.com";//change accordingly
-      String from = "sonoojaiswal1987@gmail.com";//change accordingly
-      String host = "localhost";//or IP address
-      String[] _msgChunks = message.split(",");
-     //Get the session object
-      Properties properties = System.getProperties();
-      properties.setProperty("mail.smtp.host", host);
-      Session session = Session.getDefaultInstance(properties);
-
-     //compose the message
-      try{
-         MimeMessage mailMessage = new MimeMessage(session);
-         mailMessage.setFrom(new InternetAddress(from));
-         mailMessage.addRecipient(Message.RecipientType.TO,new InternetAddress(to));
-         mailMessage.setSubject("Ping");
-         mailMessage.setText("Hello, this is example of sending email  ");
-
-         // Send message
-         Transport.send(mailMessage);
-         return "message sent successfully....";
-
-      }catch (MessagingException mex) {mex.printStackTrace(); return "Error";}
-  }
-
- */

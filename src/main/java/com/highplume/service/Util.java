@@ -2,7 +2,7 @@ package com.highplume.service;
 
 /**
  * Created by Hugh on 6/17/2017.
- * Intended for utilities
+ * Intended for utilities.
  */
  
 import java.io.*;
