@@ -22,6 +22,8 @@ public class Feedback {
   @GeneratedValue
   @Column(nullable = false, length = 25)
   private String id;
+  @Column(nullable = false, length = 25)
+  private String corpID;
   @Column(nullable = false, length = 2)
   private String type;
   @Column(nullable = true, length = 10)
@@ -34,14 +36,22 @@ public class Feedback {
 
   public Feedback() {
   }
-  public Feedback(String type, String cat, String info, Date date) {
+
+  public Feedback(String corpID, String type, String cat, String info, Date date) {
+    this.corpID = corpID;
     this.type = type;
     this.cat = cat;
     this.info = info;
     this.date = date;    
   }
+	public String getId() {
+		return id;
+	}
 
-	public String getType() {
+    public String getCorpID() {return corpID;}
+    public void setCorpID(String corpID) {this.corpID = corpID;}
+
+    public String getType() {
 		return this.type;
 	}
 	public void setType(String type){
@@ -67,11 +77,6 @@ public class Feedback {
 	}
 	public void setDate(Date date) {
 		this.date = date;
-	}
-	
-	
-	public String getId() {
-		return id;
 	}
 
 @Override public boolean equals(Object o) {
