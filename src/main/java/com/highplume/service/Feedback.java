@@ -32,18 +32,21 @@ public class Feedback {
   private String info;
   @Temporal(TemporalType.TIMESTAMP)
   private Date date;
-
+  @Column(nullable = false, length = 25)
+  private String userID;
 
   public Feedback() {
   }
 
-  public Feedback(String corpID, String type, String cat, String info, Date date) {
+  public Feedback(String corpID, String type, String cat, String info, Date date, String userID) {
     this.corpID = corpID;
     this.type = type;
     this.cat = cat;
     this.info = info;
-    this.date = date;    
+    this.date = date;
+    this.userID = userID;
   }
+
 	public String getId() {
 		return id;
 	}
@@ -79,16 +82,18 @@ public class Feedback {
 		this.date = date;
 	}
 
-@Override public boolean equals(Object o) {
-    if (this == o) return true;
-    if (o == null || getClass() != o.getClass()) return false;
-    Feedback feedback = (Feedback) o;
-    return Objects.equals(id, feedback.id) &&
-            Objects.equals(type, feedback.type) &&
-            Objects.equals(cat, feedback.cat);
-}
-@Override
-public int hashCode() {
+	public String getUserID() {return userID;}
+    public void setUserID(String userID) {this.userID = userID;}
+
+	@Override public boolean equals(Object o) {
+        if (this == o) return true;
+        if (o == null || getClass() != o.getClass()) return false;
+        Feedback feedback = (Feedback) o;
+        return Objects.equals(id, feedback.id) &&
+                Objects.equals(type, feedback.type) &&
+                Objects.equals(cat, feedback.cat);
+    }
+    @Override public int hashCode() {
     return Objects.hash(id, type, cat);
 }
 }
