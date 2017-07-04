@@ -11,12 +11,14 @@ import java.util.Objects;
 
 @NamedQueries({
         @NamedQuery(name = TUType.FIND_ALL, query = "SELECT b FROM TUType b ORDER BY b.name"),
+        @NamedQuery(name = TUType.FIND_BY_NAME, query = "SELECT b FROM TUType b WHERE b.name = :tutypename"),
         @NamedQuery(name = TUType.FIND_GENERAL, query = "SELECT b FROM TUType b WHERE b.name = 'General'")
 
 })
 
 public class TUType {
     public static final String FIND_ALL = "TUType.FIND_ALL";
+    public static final String FIND_BY_NAME = "TUType.FIND_BY_NAME";
     public static final String FIND_GENERAL = "TUType.FIND_GENERALS";
 
     @Id

@@ -83,17 +83,17 @@ public class Feedback {
 	}
 
 	public String getUserID() {return userID;}
-    public void setUserID(String userID) {this.userID = userID;}
+    	public void setUserID(String userID) {this.userID = userID;}
 
 	@Override public boolean equals(Object o) {
-        if (this == o) return true;
-        if (o == null || getClass() != o.getClass()) return false;
-        Feedback feedback = (Feedback) o;
-        return Objects.equals(id, feedback.id) &&
-                Objects.equals(type, feedback.type) &&
-                Objects.equals(cat, feedback.cat);
-    }
-    @Override public int hashCode() {
-    return Objects.hash(id, type, cat);
-}
+		if (this == o) return true;
+		if (o == null || getClass() != o.getClass()) return false;
+		Feedback feedback = (Feedback) o;
+		return Objects.equals(id, feedback.id) &&
+			Objects.equals(type, feedback.type) &&
+			Objects.equals(cat, feedback.cat);
+    	}
+    	@Override public int hashCode() {
+		return Objects.hash(id, type, cat);
+	}
 }

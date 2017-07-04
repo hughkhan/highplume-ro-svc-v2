@@ -9,7 +9,9 @@ import java.util.Objects;
 @Entity
 
 @NamedQueries({
-        @NamedQuery(name = Corp.FIND_BY_ID, query = "SELECT b FROM Corp b WHERE b.id = :id")
+        @NamedQuery(name = Corp.FIND_BY_ID, query = "SELECT b FROM Corp b WHERE b.id = :id"),
+        @NamedQuery(name = Corp.FIND_BY_NAME, query = "SELECT b FROM Corp b WHERE b.Name = :corpname"),
+        @NamedQuery(name = Corp.FIND_BY_WEBSITE, query = "SELECT b FROM Corp b WHERE b.Website = :website"),
 })
 /**
  * Created by Hugh on 12/8/2016.
@@ -17,6 +19,8 @@ import java.util.Objects;
 public class Corp {
 
   public static final String FIND_BY_ID = "Corp.findByID";
+  public static final String FIND_BY_NAME = "Corp.findByName";
+  public static final String FIND_BY_WEBSITE = "Corp.findByWebsite";
 
   @Id
   @Column(nullable = false, length = 25)

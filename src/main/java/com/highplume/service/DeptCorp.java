@@ -9,7 +9,8 @@ import java.util.Objects;
 @Entity
 @NamedQueries({
         @NamedQuery(name = DeptCorp.FIND_ALL_BY_CORPID, query = "SELECT b FROM DeptCorp b WHERE b.corpID = :corpID"),
-        @NamedQuery(name = DeptCorp.FIND_BY_ID, query = "SELECT b FROM DeptCorp b WHERE b.id = :id")
+        @NamedQuery(name = DeptCorp.FIND_BY_ID, query = "SELECT b FROM DeptCorp b WHERE b.id = :id"),
+        @NamedQuery(name = DeptCorp.FIND_BY_NAME_CORPID, query = "SELECT b FROM DeptCorp b WHERE b.DeptName = :deptname AND b.corpID = :corpid")
 })
 /**
  * Created by Hugh on 12/8/2016.
@@ -22,7 +23,8 @@ public class DeptCorp {
 
   public static final String FIND_ALL_BY_CORPID = "DeptCorp.findAllByCorpID";
   public static final String FIND_BY_ID = "DeptCorp.findByID";
-  
+  public static final String FIND_BY_NAME_CORPID = "DeptCorp.findByNameAndCorpID";
+
 //@formatter:off	
 	
 	
