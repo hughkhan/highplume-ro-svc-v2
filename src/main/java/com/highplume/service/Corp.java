@@ -19,7 +19,6 @@ public class Corp {
   public static final String FIND_BY_ID = "Corp.findByID";
 
   @Id
-  @GeneratedValue
   @Column(nullable = false, length = 25)
   private String id;
   @Column(nullable = false, length = 50)
@@ -30,33 +29,35 @@ public class Corp {
 
   public Corp() {
   }
-  public Corp(String name, String website) {
+  public Corp(String id, String name, String website) {
+    this.id = id;
     Name = name;
     Website = website;
   }
-
-  public String getName() {
+    public String getName() {
     return Name;
 }
-public void setName(String name) {
+    public void setName(String name) {
     Name = name;
 }
-public String getWebsite() {
+    public String getWebsite() {
     return Website;
 }
-public void setWebsite(String website) {
+    public void setWebsite(String website) {
     Website = website;
 }
-public String getId() {
+    public String getId() {
     return id;
-}@Override public boolean equals(Object o) {
-    if (this == o) return true;
-    if (o == null || getClass() != o.getClass()) return false;
-    Corp corp = (Corp) o;
-    return Objects.equals(id, corp.id) &&
-            Objects.equals(Name, corp.Name) &&
-            Objects.equals(Website, corp.Website);
-}@Override
-public int hashCode() {
+}
+
+    @Override public boolean equals(Object o) {
+        if (this == o) return true;
+        if (o == null || getClass() != o.getClass()) return false;
+        Corp corp = (Corp) o;
+        return Objects.equals(id, corp.id) &&
+                Objects.equals(Name, corp.Name) &&
+                Objects.equals(Website, corp.Website);
+        }
+    @Override public int hashCode() {
     return Objects.hash(id, Name, Website);
 }}
