@@ -12,7 +12,7 @@ import java.util.Objects;
 @NamedQueries({
         @NamedQuery(name = TUType.FIND_ALL, query = "SELECT b FROM TUType b ORDER BY b.name"),
         @NamedQuery(name = TUType.FIND_BY_NAME, query = "SELECT b FROM TUType b WHERE b.name = :tutypename"),
-        @NamedQuery(name = TUType.FIND_GENERAL, query = "SELECT b FROM TUType b WHERE b.name = 'General'")
+        @NamedQuery(name = TUType.FIND_GENERAL, query = "SELECT b FROM TUType b WHERE b.name = 'Great Employee'")
 
 })
 

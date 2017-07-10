@@ -603,7 +603,7 @@ select get_avg('1');
 //            rank += Double.parseDouble(corpValues.get(valueTotals.get(i)[0]).toString()) * ((Long)valueTotals.get(i)[2]).doubleValue();
 //            rank += ((Float)corpValues.get(valueTotals.get(i)[0])).doubleValue() * ((Long)valueTotals.get(i)[2]).doubleValue();
 
-            if (valueTotals.get(i)[2].equals("General"))
+            if (valueTotals.get(i)[2].equals("Great Employee"))
                 rank += getGeneralsAvg(corpID) * ((Long)valueTotals.get(i)[1]).doubleValue();
             else
                 rank += ((Double)valueTotals.get(i)[0]) * ((Long)valueTotals.get(i)[1]).doubleValue();
@@ -614,7 +614,7 @@ select get_avg('1');
                 rank = valueRatio * tuCount;
             }*/
         }
-        return rank;       //Multiply General with the average off other values.
+        return rank;       //Multiply Great Employee with the average off other values.
     }
 
     /*------------------------*/
@@ -644,7 +644,7 @@ select get_avg('1');
         double rank = 0.0;
         for (int i=0; i < valueTotals.size(); i++){
 //            rank += Double.parseDouble(corpValues.get(valueTotals.get(i)[0]).toString()) * ((Long)valueTotals.get(i)[2]).doubleValue();
-            if (valueTotals.get(i)[2].equals("General"))
+            if (valueTotals.get(i)[2].equals("Great Employee"))
                 rank += getGeneralsAvg(corpID) * ((Long)valueTotals.get(i)[1]).doubleValue();
             else
                 rank += ((Double)valueTotals.get(i)[0]) * ((Long)valueTotals.get(i)[1]).doubleValue();
@@ -667,7 +667,7 @@ select get_avg('1');
        	TUComposite activeProfile = em.createNamedQuery(TUComposite.FIND_ACTIVE_BY_CORPID, TUComposite.class).setParameter("corpID", corpID).getSingleResult();
         List<TU> profileTUs = em.createNamedQuery(TU.FIND_ALL_BY_TUCOMPOSITEID, TU.class).setParameter("tucompositeid", activeProfile.getId()).getResultList();
 
-        if (profileTUs.size() <= 1)     //If no results or only "General" present
+        if (profileTUs.size() <= 1)     //If no results or only "Great Employee" present
             return 0.0;
 
         for (TU tu: profileTUs){
@@ -675,7 +675,7 @@ select get_avg('1');
         }
 
 	    log("getGeneralsAvg: " + Double.toString(total/(profileTUs.size()-1)));
-        return total/(profileTUs.size()-1);         //Don't add "General" to the total
+        return total/(profileTUs.size()-1);         //Don't add "Great Employee" to the total
 
 /*        profileTUs.forEach((tu) -> {
             avg += ;
@@ -1487,11 +1487,15 @@ select get_avg('1');
             retStr +=                   "\"values\": [{";
 
             for (int j=0; j<tus.size(); j++){
+                if (!tus.get(j)[3].equals("Great Employee")){
+                    retStr +=                   "\"tuid\": \"" + tus.get(j)[0] + "\", \"tutypeid\": \"" + tus.get(j)[1] + "\", \"tutypename\": \"" + tus.get(j)[3] + "\", \"ratio\": " + (tus.get(j)[2]).toString();
 
-                retStr +=                   "\"tuid\": \"" + tus.get(j)[0] + "\", \"tutypeid\": \"" + tus.get(j)[1] + "\", \"tutypename\": \"" + tus.get(j)[3] + "\", \"ratio\": " + (tus.get(j)[2]).toString();
-
-                if (j+1 != tus.size() ){
-                    retStr +=       "}, {";}
+                    if (j+1 != tus.size() ){
+                        retStr +=       "}, {";}
+                }
+                 else{
+                    if (tus.size() != 0) retStr = retStr.substring(0, retStr.length()-4);
+                }
             }
 
             retStr +=               "}] ";
