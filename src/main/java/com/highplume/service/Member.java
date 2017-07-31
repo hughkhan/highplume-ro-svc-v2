@@ -52,7 +52,7 @@ public class Member {
   @Column(nullable = false, length = 25)
   private String corpID;
   @Id
-  @Column(nullable = false, length = 25)
+  @Column(nullable = false, length = 50)
   private String userID;
   @Column(nullable = false, length = 50)
   private String PWD;
